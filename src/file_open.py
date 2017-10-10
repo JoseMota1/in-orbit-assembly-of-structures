@@ -1,22 +1,23 @@
 tests_path = '../test/'
+from datastructures import *
 
 with open(tests_path + 'example.txt') as fd:
 	lines = [line.strip().split(' ') for line in fd]
+	
+vertices = {}
+edges = []
+launches = []
 
 for line in lines:
 	if line[0][0]=='V':
-		V_id = line[0]
-		weight = line[1]
+		vertices[line[0][1:]] = line[1]
 	elif line[0][0]=='E':
-		V_id = line[0]
-		Vid1 = line[1]
-		Vid2 = line[2]
+		edges.append( Edge( vertices[line[1][1:]], vertices[line[2][1:]] ) )
 	elif line[0][0]=='L':
-		date = line[1]
-		max_payload = line[2]
-		fixed_cost = line[3]
-		variable_cost = line[4]
+		launches.append( Launch( line[1], line[2], line[3], line[4]) )
 	else:
 		print(line)
-
-print(stop-start)
+		
+print(vertices)
+print(edges)
+print(launches)
