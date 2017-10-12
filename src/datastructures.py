@@ -1,12 +1,7 @@
-class Vertice:
-	__slots__ = ('id', 'weight')
-	def __init__(self, id, weight):
-		self.id = id
-		self.weight = weight
-		
-	def __repr__(self):
-		return ('Vertice ID: ' + self.id + ', weight: ' + str(self.weight))
+from collections import namedtuple
+from collections import deque
 
+Vertice = namedtuple('Vertice', ['id', 'weight'])
 
 class Edge:
 	__slots__ = ('v1', 'v2')
@@ -15,7 +10,7 @@ class Edge:
 		self.v2 = v2
 		
 	def __repr__(self):
-		return ('Edge with V1: ' + self.v1.id + ' and V2: ' + self.v2.id)
+		return ('Edge with V1: ' + str(self.v1) + ' and V2: ' + str(self.v2))
 
 
 class Launch:
@@ -27,14 +22,15 @@ class Launch:
 		self.variable_cost = variable_cost
 		
 	def __repr__(self):
-		return ('Launch date: ' + date + ', max_payload: ' + str(self.max_payload) + 
+		return ('Launch date: ' + self.date + ', max_payload: ' + str(self.max_payload) + 
 			', fixed_cost: ' + str(self.fixed_cost) + 
 			', variable_cost: ' + str(self.variable_cost))
 		
 		
 class Node:
-	__slots__ = ('state', 'cost', 'parent')
-	def __init__(self, state, cost, parent):
+	__slots__ = ('state', 'cost', 'parent', 'operator')
+	def __init__(self, state, cost, parent, operator):
 		self.state = state
 		self.cost = cost
 		self.parent = parent
+		self.operator = operator
