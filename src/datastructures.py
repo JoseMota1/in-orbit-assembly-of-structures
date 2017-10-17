@@ -1,4 +1,5 @@
 from collections import namedtuple, deque
+from itertools import combinations
 
 Vertice = namedtuple('Vertice', ['id', 'weight'])
 Launch = namedtuple('Launch', ['date', 'payload', 'fixed_cost', 'variable_cost'])
@@ -43,3 +44,15 @@ class Problem:
 		self.launches = launches		
 		
 	def actions(self, state):
+		max_payload = self.launches[state.date]
+		
+		# TODO still need to check weight
+		actions = []
+		nvertices = 3 # better checking
+		for vertice in land:
+			actions.append('load' + vertice.id)
+			connections = (v for v in edges[vertice] if v not in air)
+			[actions.append( 'load ' + vertice.id + ' ' +  str(vs)) for n in nvertices for vs in combinations(childs, n) if vs if sum(v.weight for v in vs) < max_payload]
+			
+		return actions
+		
