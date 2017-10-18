@@ -11,9 +11,9 @@ def cost_search(problem)
 
 		node = heapq.heappop(frontier)	# chooses the lowest-cost node in frontier (first)
 
-		if problem.GOAL_TEST(node.STATE) 
+		if problem.GOAL_TEST(node.STATE)
 			explored.append(node.STATE);
-		
+
 		for each_action in problem.ACTIONS(node.STATE)
 			child = CHILD_NODE(problem, node, action);
 			if (present_state(explored,child)  || present_state(frontier, child)) && (child.path_cost < node.path_cost)
@@ -21,7 +21,7 @@ def cost_search(problem)
 			elif present_state(frontier,child) && child.path_cost > node.path_cost)
 				frontier = child;
 	return result
-	
+
 
 def present_state(lista,node)
 i=0;
@@ -32,9 +32,9 @@ i=0;
 		else
 			return 0;
 	i=i+1;
-			
-		
-def CHILD_NODE(problem, parent , action) 
+
+
+def CHILD_NODE(problem, parent , action)
 
 	node.STATE = RESULT(parent.STATE, action),
 	node.PARENT = parent

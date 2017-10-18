@@ -72,7 +72,7 @@ class Problem:
 		max_payload = self.launches[state.date].max_payload # Estamos a assumir um unico lançamento por data
 
 		actions = []
-		if len(self.state.loaded.vertices) == 0:
+		if not self.state.loaded.vertices:
 			action.append('pass')
 		elif (len(self.state.loaded.vertices) > 1 or
 			len(self.state.loaded.vertices) == 1 and any(self.edges[self.state.loaded.vertices]) in self.state.air):
