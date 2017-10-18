@@ -2,7 +2,7 @@ from collections import namedtuple, deque, OrderedDict # lista imutavel com aces
 from itertools import combinations
 
 Vertice = namedtuple('Vertice', ['id', 'weight'])
-Launch = namedtuple('Launch', ['date', 'payload', 'fixed_cost', 'variable_cost'])
+loaded = namedtuple('loaded', ['weight', 'vertices'])
 
 class Frontier:
 	def __init__(self):
@@ -26,24 +26,27 @@ class Frontier:
 
 
 class Launch:
-	__slots__ = ('date', 'max_payload', 'fixed_cost', 'variable_cost')
-	def __init__(self, date, max_payload, fixed_cost, variable_cost):
+	__slots__ = ('date', 'max_payload', 'fixed_cost', 'variable_cost', 'next_launch')
+	def __init__(self, date, max_payload, fixed_cost, variable_cost, next_launch):
 		self.date = date
 		self.max_payload = max_payload
 		self.fixed_cost = fixed_cost
 		self.variable_cost = variable_cost
+		self.next_launch = next_launch
 
 	def __repr__(self):
 		return ('Launch date: ' + str(self.date) +
 			', max_payload: ' + str(self.max_payload) +
 			', fixed_cost: ' + str(self.fixed_cost) +
-			', variable_cost: ' + str(self.variable_cost))
+			', variable_cost: ' + str(self.variable_cost) +
+			', next_launch: ' + str(self.next_launch))
 
 
 class State:
-	__slots__ = ('land', 'air', 'date')
-	def __init__(self, land, air, date):
+	__slots__ = ('land', 'loaded', 'air', 'date')
+	def __init__(self, land, loaded, air, date):
 		self.land = land
+		self.loaded = loaded
 		self.air = air
 		self.date = date
 
@@ -68,44 +71,31 @@ class Problem:
 	def actions(self, state):
 		max_payload = self.launches[state.date].max_payload # Estamos a assumir um unico lançamento por data
 
-		actions = ['pass']
-		for vertice in state.land:
-		
-			weights = [vertice.weight]
-			inair = []
-			[inair.append(v) if v in state.air else weights.append(v.weight) for v in self.edges[vertice]]
-			
-			if any(inair):
-				actions.append('load ' + vertice.id)
-			
-			minweight = min(weights)
-			nvertices = round(max_payload/minweight)
-			
-			#for comb in combinations((v for v in self.edges[vertice] if v not in state.air), 3):
-			#	print(comb)
-			
-			[actions.append( 'load ' + vertice.id + ' ' + ' '.join((v.id for v in vs)))
-				for n in range(1, nvertices+1) 
-				for vs in combinations((v for v in self.edges[vertice] if v not in state.air), n) 
-				if vs if sum(v.weight for v in vs) < max_payload]
-			
+		actions = []
+		if len(self.state.loaded.vertices) == 0:
+			action.append('pass')
+		elif (len(self.state.loaded.vertices) > 1 or
+			len(self.state.loaded.vertices) == 1 and any(self.edges[self.state.loaded.vertices]) in self.state.air):
+			actions.append('launch')
+		[actions.append(vertice.id) for vertice in self.state.land
+			if self.loaded.weight + vertice.weight < max_payload
+			if any(self.edges[vertice]) in self.state.air + self.state.loaded.vertices or not self.state.air]
+
 		return actions
-		
-	
+
+
 	def result(pstate, action):
-		action1 = action.split(' ')
-		if action1[0] == 'pass':
-			pstate.date = min()
-			
-		return pstate
+		if action[0] == 'pass':
+			new.date = 0
+
+		return new
+
 
 	def childnode(self, parent, action):
-	
-		
+
 		state = result(parent.state, action)
 		parent = parent
 		action = action
 		cost = parent.cost + costfunction(action)
-		
+
 		return Node(state, parent, action, cost)
-		
