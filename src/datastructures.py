@@ -86,16 +86,19 @@ class Problem:
 
 	def result(pstate, action):
 		if action[0] == 'pass':
-			new.date = 0
+			for line in Launch
+			pstate.date = line[4]    
 
-		return new
+		if action[0] == 'launch':
+			pstate.air.append(pstate.loaded)
+			pstate.land.remove(p.state.loaded) 
+			pstate.loaded.clear()
+
+		return
 
 
 	def childnode(self, parent, action):
-
-		state = result(parent.state, action)
-		parent = parent
-		action = action
+		result(parent.state, action)
 		cost = parent.cost + costfunction(action)
 
 		return Node(state, parent, action, cost)
