@@ -84,21 +84,35 @@ class Problem:
 		return actions
 
 
-	def result(pstate, action):
+	def costfunction(self, action): # VER COMO ESTA ESCRITO
 		if action[0] == 'pass':
-			for line in Launch
-			pstate.date = line[4]    
+			cost = 0
+
+		if action[0] == 'launch':
+			for line in Launch:
+				fixedcost = line[2] 
+				variablecost = line[3]
+				SI = len(self.state.loaded.vertices) 
+				cost = fixedcost+SI*variablecost 
+
+
+		return cost
+
+	def result(pstate, action): # VER COMO ESTA ESCRITO
+		if action[0] == 'pass':
+			for line in Launch:
+				pstate.date = line[4]    
 
 		if action[0] == 'launch':
 			pstate.air.append(pstate.loaded)
-			pstate.land.remove(p.state.loaded) 
+			pstate.land.remove(pstate.loaded) 
 			pstate.loaded.clear()
 
 		return
 
 
-	def childnode(self, parent, action):
+	def childnode(self, parent, action): # VER COMO ESTA ESCRITO
+		action_cost = costfunction(action)
 		result(parent.state, action)
-		cost = parent.cost + costfunction(action)
 
-		return Node(state, parent, action, cost)
+		return 
