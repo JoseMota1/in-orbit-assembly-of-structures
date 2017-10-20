@@ -1,5 +1,7 @@
-from collections import namedtuple, deque, OrderedDict # lista imutavel com acesso hash , lista duplamente ligada
+ # lista imutavel com acesso hash , lista duplamente ligada e dicionario ordenado
+from collections import namedtuple, deque, OrderedDict
 from itertools import combinations
+from copy import deepcopy
 
 Vertice = namedtuple('Vertice', ['id', 'weight'])
 loaded = namedtuple('loaded', ['weight', 'vertices'])
@@ -84,35 +86,22 @@ class Problem:
 		return actions
 
 
-	def costfunction(self, action): # VER COMO ESTA ESCRITO
-		if action[0] == 'pass':
-			cost = 0
+	def childnode(self, parent, action):
+		pstate = parent.state
+		if action == 'pass':
+			state = deepcopy(pstate)
+			state.date = self.launches[pstate.date].next_launch
+			cost = pstate.cost
+		elif action == 'launch':
+			state = State(pstate.land, [], pstate.air + pstate.loaded,
+				self.launches[pstate.date].next_launch)
+			cost = pstate.cost + self.launches[pstate.date].fixed_cost
+		else:
+			vertice = action
+			state = State(pstate.land.remove(vertice),
+				pstate.loaded.append(vertice), pstate.air, pstate.date)
+			cost = pstate.cost + (
+				self.launches[pstate.date].variable_cost *
+				self.vertices[vertice].weight)
 
-		if action[0] == 'launch':
-			for line in Launch:
-				fixedcost = line[2] 
-				variablecost = line[3]
-				SI = len(self.state.loaded.vertices) 
-				cost = fixedcost+SI*variablecost 
-
-
-		return cost
-
-	def result(pstate, action): # VER COMO ESTA ESCRITO
-		if action[0] == 'pass':
-			for line in Launch:
-				pstate.date = line[4]    
-
-		if action[0] == 'launch':
-			pstate.air.append(pstate.loaded)
-			pstate.land.remove(pstate.loaded) 
-			pstate.loaded.clear()
-
-		return
-
-
-	def childnode(self, parent, action): # VER COMO ESTA ESCRITO
-		action_cost = costfunction(action)
-		result(parent.state, action)
-
-		return 
+		return Node(state, parent, action, cost)
