@@ -1,24 +1,39 @@
-def cost_search(problem)
+from datastructures import Frontier, Node, State
 
-	node=Node();
-	PATH_COST = 0;
-	explored=[];
-	frontier=Frontier() #a priority queue ordered by PATH-COST, with node as the only elemen
+def solution(node):
+	actions = []
+	while node:
+		actions.append(node.action)
+		node = node.parent
+		# print(node)
+
+	# print(actions)
+	return reversed(actions)
+
+def solve(problem):
+
+	node = Node(problem.initialstate(), False, False, 0)
+	""" Frontier is a priority queue ordered by PATH-COST,
+		with __node__ as the only element.
+	"""
+	frontier = Frontier(node)
+	explored = set()
 
 	while True:
-		if not frontier:
-			return failure
+		if not frontier.queue:
+			return False
 
-		node = heapq.heappop(frontier)	# chooses the lowest-cost node in frontier (first)
+		node = frontier.pop() # Chooses the lowest-cost node in frontier (first)
 		if problem.goal(node.state):
-			return problem.solution(node)
+			return solution(node)
 
-		explored.append(node.state);
+		explored.add(node.state)
 
 		for action in problem.actions(node.state):
+			print(action)
 			child = problem.childnode(node, action)
+
+			print(node.state)
+			print('\n')
 			# TODO lower code is done in the Frontier class
-			if child.state in explored  or (child.state in frontier and child.path_cost < node.cost):
-				frontier.insert(child)
-			elif child.state in frontier and child.cost > node.cost): # if coiso in ...
-				frontier = child;
+			frontier.insert(child)

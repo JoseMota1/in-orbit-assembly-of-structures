@@ -1,29 +1,31 @@
  # lista imutavel com acesso hash , lista duplamente ligada e dicionario ordenado
 from collections import namedtuple, deque, OrderedDict
-from itertools import combinations
+from itertools import combinations, islice
 from copy import deepcopy
+from heapq import heappush, heappop
 
 Vertice = namedtuple('Vertice', ['id', 'weight'])
-loaded = namedtuple('loaded', ['weight', 'vertices'])
 
 class Frontier:
-	def __init__(self):
+
+	def __init__(self, node):
 		self.queue = list()
 		self.expanded = dict()
+		self.insert(node)
 
 	def insert(self, node):
-		if not expanded[node.state]:
-			heapq.heappush(self.queue, node)
-			expanded[node.state] = [node.cost, False]
-		if expanded[node.state] and node.cost < expanded[node.state].cost:
-			heapq.heappush(self.queue, node)
-			expanded[node.state][0] = node.cost
+		if not self.expanded.get(node.state, False):
+			heappush(self.queue, node)
+			self.expanded[node.state] = [node.cost, False]
+		elif node.cost < self.expanded[node.state][0]:
+			heappush(self.queue, node)
+			self.expanded[node.state][0] = node.cost
 
 	def pop(self):
 		while True:
-			node = heapq.heappop(self.queue)
-			if not expanded[node.state][1]:
-				expanded[node.state] = [node.cost, True]
+			node = heappop(self.queue)
+			if not self.expanded[node.state][1]:
+				self.expanded[node.state] = [node.cost, True]
 				return node
 
 
@@ -52,14 +54,29 @@ class State:
 		self.air = air
 		self.date = date
 
+	def __repr__(self):
+		return ('State land: ' + str(self.land) +
+			' loaded ' + str(self.loaded) +
+			' air ' + str(self.air) +
+			' date ' + str(self.date))
+
 
 class Node:
-	__slots__ = ('state', 'cost', 'parent', 'action')
-	def __init__(self, state, cost, parent, action):
+	__slots__ = ('state', 'parent', 'action', 'cost')
+	def __init__(self, state, parent, action, cost):
 		self.state = state
 		self.parent = parent
 		self.action = action
 		self.cost = cost
+
+	def __repr__(self):
+		return ('Node state: ' + str(self.state) +
+			' from Parent ' + str(self.parent) +
+			' with action: ' + str(self.action) +
+			' and cost ' + str(self.cost))
+
+	def __lt__(self, other):
+		return self.cost < other.cost
 
 
 class Problem:
@@ -69,39 +86,52 @@ class Problem:
 		self.edges = edges
 		self.launches = launches
 
+	def initialstate(self):
+		initialdate = next(islice(self.launches, 1))
+		return State(list(self.vertices.values()), [], [], str(initialdate))
+
+	def goal(self, state):
+		if not state.land and not state.loaded:
+			return True
+		return False
 
 	def actions(self, state):
-		max_payload = self.launches[state.date].max_payload # Estamos a assumir um unico lançamento por data
-
 		actions = []
-		if not self.state.loaded.vertices:
-			action.append('pass')
-		elif (len(self.state.loaded.vertices) > 1 or
-			len(self.state.loaded.vertices) == 1 and any(self.edges[self.state.loaded.vertices]) in self.state.air):
+
+		# We are assuming that the launch date is an unique id
+		launch = self.launches.get(state.date, 0)
+		if launch:
+			max_payload = launch.max_payload
+		else:
+			return actions
+		
+		if not state.loaded:
+			actions.append('pass')
+		elif (len(state.loaded) > 1 or
+			len(state.loaded) == 1 and any(self.edges[state.loaded]) in state.air):
 			actions.append('launch')
-		[actions.append(vertice.id) for vertice in self.state.land
-			if self.loaded.weight + vertice.weight < max_payload
-			if any(self.edges[vertice]) in self.state.air + self.state.loaded.vertices or not self.state.air]
+		[actions.append(vertice) for vertice in state.land
+			if sum(vertice.weight for vertice in state.loaded) + vertice.weight < max_payload]
+		# if any(self.edges[vertice]) in self.state.air + self.state.loaded or not self.state.air]
 
 		return actions
-
 
 	def childnode(self, parent, action):
 		pstate = parent.state
 		if action == 'pass':
 			state = deepcopy(pstate)
 			state.date = self.launches[pstate.date].next_launch
-			cost = pstate.cost
+			cost = parent.cost
 		elif action == 'launch':
 			state = State(pstate.land, [], pstate.air + pstate.loaded,
 				self.launches[pstate.date].next_launch)
-			cost = pstate.cost + self.launches[pstate.date].fixed_cost
+			cost = parent.cost + self.launches[pstate.date].fixed_cost
 		else:
 			vertice = action
 			state = State(pstate.land.remove(vertice),
 				pstate.loaded.append(vertice), pstate.air, pstate.date)
-			cost = pstate.cost + (
+			cost = parent.cost + (
 				self.launches[pstate.date].variable_cost *
-				self.vertices[vertice].weight)
+				self.vertices[vertice.id].weight)
 
 		return Node(state, parent, action, cost)
