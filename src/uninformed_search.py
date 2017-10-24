@@ -1,13 +1,13 @@
 from datastructures import Frontier, Node, State
 
 def solution(node):
+	print('Solutions')
 	actions = []
 	while node:
+		print(node.action)
 		actions.append(node.action)
 		node = node.parent
-		# print(node)
 
-	# print(actions)
 	return reversed(actions)
 
 def solve(problem):
@@ -20,20 +20,27 @@ def solve(problem):
 	explored = set()
 
 	while True:
+		# print(frontier.queue)
 		if not frontier.queue:
 			return False
 
 		node = frontier.pop() # Chooses the lowest-cost node in frontier (first)
+
+		#print(node.state)
 		if problem.goal(node.state):
 			return solution(node)
 
 		explored.add(node.state)
 
+		#print('Parent ' + str(node.state))
 		for action in problem.actions(node.state):
-			print(action)
 			child = problem.childnode(node, action)
 
-			print(node.state)
-			print('\n')
+			if child.state in explored:
+				continue
+
+			#print('Child ' + str(child.state))
+			#print('\n')
 			# TODO lower code is done in the Frontier class
 			frontier.insert(child)
+			#print(len(frontier.queue))

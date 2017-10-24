@@ -1,6 +1,7 @@
 import sys, getopt
 import uninformed_search
 from datastructures import *
+from time import perf_counter
 
 def getinfo(lines):
     """ Retrieves the information present in the file given.
@@ -15,10 +16,12 @@ def getinfo(lines):
     launches = dict()
 
     for line in lines:
+        if not line[0]:
+            continue
         if line[0][0]=='V':
-            id = line[0]
+            name = line[0]
             value = line[1]
-            vertices[id] = Vertice(id, float(value))
+            vertices[name] = Vertice(name, float(value))
         elif line[0]=='E':
             v1 = vertices[line[1]]
             v2 = vertices[line[2]]
@@ -55,8 +58,13 @@ def main(argv):
             print("Informed search not yet implemented")
             sys.exit(1)
         elif opt == '-u':
+            start = perf_counter()
             solution = uninformed_search.solve(problem)
+            print('Time elapsed: ', perf_counter() - start)
 
+    if not solution:
+        print("No solution found!")
+        sys.exit(0)
     print(x for x in solution)
 
 

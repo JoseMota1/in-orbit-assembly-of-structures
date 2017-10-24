@@ -1,14 +1,18 @@
- # lista imutavel com acesso hash , lista duplamente ligada e dicionario ordenado
+# lista imutavel com acesso hash , lista duplamente ligada e dicionario ordenado
 from collections import namedtuple, deque, OrderedDict
 from itertools import combinations, islice
 from copy import deepcopy
 from heapq import heappush, heappop
 
-Vertice = namedtuple('Vertice', ['id', 'weight'])
+Vertice = namedtuple('Vertice', ['name', 'weight'])
 
 class Frontier:
 
 	def __init__(self, node):
+		""" Frontier class is initialized with an initial Node.
+		The expanded dictionary contains the expanded nodes as keys, and
+		the cost of each as value
+		"""
 		self.queue = list()
 		self.expanded = dict()
 		self.insert(node)
@@ -27,6 +31,12 @@ class Frontier:
 			if not self.expanded[node.state][1]:
 				self.expanded[node.state] = [node.cost, True]
 				return node
+
+	def isempty(self):
+		""" TODO SHIT """
+		if not self.queue:
+			return True
+		return False
 
 
 class Launch:
@@ -92,6 +102,9 @@ class Problem:
 
 	def goal(self, state):
 		if not state.land and not state.loaded:
+			print('goal')
+			print(state.land)
+			print(state.loaded)
 			return True
 		return False
 
@@ -103,35 +116,38 @@ class Problem:
 		if launch:
 			max_payload = launch.max_payload
 		else:
+			#print('actions@False: ', actions)
 			return actions
-		
+
 		if not state.loaded:
 			actions.append('pass')
-		elif (len(state.loaded) > 1 or
-			len(state.loaded) == 1 and any(self.edges[state.loaded]) in state.air):
+		elif ( (len(state.loaded) > 1) or
+				(len(state.loaded) == 1
+					and any(edge in state.air for edge in self.edges[state.loaded[0]])) or
+				(len(state.loaded) == 1 and not state.air) ):
 			actions.append('launch')
 		[actions.append(vertice) for vertice in state.land
 			if sum(vertice.weight for vertice in state.loaded) + vertice.weight < max_payload]
 		# if any(self.edges[vertice]) in self.state.air + self.state.loaded or not self.state.air]
 
+		#print('max_payload', max_payload, ' actions@True: ', actions)
 		return actions
 
 	def childnode(self, parent, action):
-		pstate = parent.state
+		state = deepcopy(parent.state)
 		if action == 'pass':
-			state = deepcopy(pstate)
-			state.date = self.launches[pstate.date].next_launch
+			state.date = self.launches[state.date].next_launch
 			cost = parent.cost
 		elif action == 'launch':
-			state = State(pstate.land, [], pstate.air + pstate.loaded,
-				self.launches[pstate.date].next_launch)
-			cost = parent.cost + self.launches[pstate.date].fixed_cost
+			state.air = state.air + state.loaded
+			state.loaded = []
+			cost = parent.cost + self.launches[state.date].fixed_cost
+			state.date = self.launches[state.date].next_launch
 		else:
-			vertice = action
-			state = State(pstate.land.remove(vertice),
-				pstate.loaded.append(vertice), pstate.air, pstate.date)
+			state.land.remove(action)
+			state.loaded.append(action)
 			cost = parent.cost + (
-				self.launches[pstate.date].variable_cost *
-				self.vertices[vertice.id].weight)
+				self.launches[state.date].variable_cost *
+				self.vertices[action.name].weight)
 
 		return Node(state, parent, action, cost)
