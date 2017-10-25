@@ -1,4 +1,4 @@
-from datastructures import Frontier, Node, State, perf_counter
+from datastructures import Frontier, Node, State, combinations
 
 def solution(node):
 	# print('Solutions')
@@ -9,9 +9,10 @@ def solution(node):
 
 	return reversed(actions[:-1])
 
-def solve(problem):
+def solve(problem, opt):
 
 	node = Node(problem.initialstate(), False, False, 0)
+
 	""" Frontier is a priority queue ordered by PATH-COST,
 		with __node__ as the only element.
 	"""
@@ -24,16 +25,17 @@ def solve(problem):
 			return False
 
 		node = frontier.pop() # Chooses the lowest-cost node in frontier (first)
-
+		print('parent ', node)
 		if problem.goal(node.state):
 			return solution(node)
 
 		explored.add(node.state)
 
 		for action in problem.actions(node.state):
-			child = problem.childnode(node, action)
+			child = problem.childnode(node, action, opt)
 			if child.state in explored:
 				continue
 
+			print('child ', child)
 			# TODO lower code is done in the Frontier class
 			frontier.insert(child)

@@ -1,5 +1,5 @@
 import sys, getopt
-import uninformed_search
+import searchstrategies
 from datastructures import *
 
 def getinfo(lines):
@@ -54,11 +54,13 @@ def main(argv):
 
     for opt, arg in opts:
         if opt == '-i':
-            print("Informed search not yet implemented")
-            sys.exit(1)
+            problem.heuristics()
+            start = perf_counter()
+            solution = searchstrategies.solve(problem, opt)
+            print('Time elapsed: ', perf_counter() - start)
         elif opt == '-u':
             start = perf_counter()
-            solution = uninformed_search.solve(problem)
+            solution = searchstrategies.solve(problem, opt)
             print('Time elapsed: ', perf_counter() - start)
 
     if not solution:

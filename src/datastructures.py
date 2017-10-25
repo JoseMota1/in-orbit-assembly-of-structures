@@ -68,10 +68,10 @@ class State:
 		self.date = date
 
 	def __repr__(self):
-		return ('State land: ' + str(self.land) +
-			' loaded ' + str(self.loaded) +
-			' air ' + str(self.air) +
-			' date ' + str(self.date))
+		return ('State LAND ' + str(self.land) +
+			' LOADED ' + str(self.loaded) +
+			' AIR ' + str(self.air) +
+			' DATE ' + str(self.date))
 
 
 class Node:
@@ -84,7 +84,7 @@ class Node:
 		self.cost = cost
 
 	def __repr__(self):
-		return ('Node state: ' + str(self.state))# +
+		return ('Node with ' + str(self.state))# +
 			#' from Parent ' + str(self.parent) +
 			#' with action: ' + str(self.action) +
 			#' and cost ' + str(self.cost))
@@ -102,7 +102,7 @@ class Problem:
 
 	def initialstate(self):
 		initialdate = next(islice(self.launches, 1))
-		return State(set(self.vertices.values()), set(), set(), str(initialdate))
+		return State(frozenset(self.vertices.values()), frozenset(), frozenset(), str(initialdate))
 
 	def goal(self, state):
 		if not state.land and not state.loaded:
@@ -134,29 +134,46 @@ class Problem:
 		#print('max_payload', max_payload, ' actions@True: ', actions)
 		return actions
 
-	def childnode(self, parent, action):
+	def childnode(self, parent, action, *opts):
 		pstate = parent.state
 		if action == 'pass':
-			land = set(pstate.land)
-			loaded = set(pstate.loaded)
-			air = set(pstate.air)
 			date = self.launches[pstate.date].next_launch
-			state = State(land, loaded, air, date)
-			cost = parent.cost
+			state = State(frozenset(pstate.land), frozenset(pstate.loaded), frozenset(pstate.air), date)
+			if opts[0] == '-i':
+				cost = parent.cost + self.rem_weight[pstate.land]
+			elif opt[0] == '-u':
+				cost = parent.cost
+
 		elif action == 'launch':
 			air = pstate.air | pstate.loaded
-			cost = parent.cost + self.launches[pstate.date].fixed_cost
+			if opts[0] == '-i':
+				cost = parent.cost + self.rem_weight[pstate.land] + self.launches[pstate.date].fixed_cost - len(pstate.land)/((len(pstate.land)*self.launches[pstate.date].fixed_cost + self.launches[pstate.date].max_payload*self.launches[pstate.date].variable_cost))
+			elif opt[0] == '-u':
+				cost = parent.cost + self.launches[pstate.date].fixed_cost
 			date = self.launches[pstate.date].next_launch
-			state = State(set(pstate.land), set(), air, date)
+			state = State(frozenset(pstate.land), frozenset(), air, date)
 		else:
 			# LOAD Vertice
 			land = set(pstate.land)
 			land.remove(action)
+			land = frozenset(land)
 			loaded = set(pstate.loaded)
 			loaded.add(action)
-			cost = parent.cost + (
-				self.launches[pstate.date].variable_cost *
-				self.vertices[action.name].weight)
-			state = State(land, loaded, set(pstate.air), pstate.date)
+			if opts[0] == '-i':
+				cost = parent.cost + (
+					self.launches[pstate.date].variable_cost *
+					self.vertices[action.name].weight)
+			elif opts[0] == '-u':
+				cost = parent.cost + (
+					self.launches[pstate.date].variable_cost *
+					self.vertices[action.name].weight)
 
+			state = State(land, frozenset(loaded), frozenset(pstate.air), pstate.date)
 		return Node(state, parent, action, cost)
+
+	def heuristics(self):
+		vertices = frozenset(self.vertices.values())
+		self.rem_weight = dict()
+		for i in range(len(vertices)+1):
+			for vertices_comb in combinations(vertices, i):
+				self.rem_weight[frozenset(vertices_comb)] = sum(v.weight for v in vertices_comb)
