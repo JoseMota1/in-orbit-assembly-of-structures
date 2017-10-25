@@ -51,7 +51,7 @@ def solve(problem):
 		#print('Parent ' + str(node.state))
 		for action in problem.actions(node.state):
 			start = perf_counter()
-			child, p_deepcopy, p_actions, p_node = problem.childnode(node, action)
+			child, p_deepcopy, p_actions, p_node, p_action = problem.childnode(node, action)
 			t1 = perf_counter()
 			t_child = t_child + (t1 - start)
 			if child.state in explored:
@@ -69,7 +69,7 @@ def solve(problem):
 			array_actions.append(p_actions)
 			array_node.append(p_node)
 			#print(len(frontier.queue))
-		if i > 100000:
+		if i > 10000:
 			break
 		i = i + 1
 

@@ -136,22 +136,33 @@ class Problem:
 
 	def childnode(self, parent, action):
 		start = perf_counter()
-		state = deepcopy(parent.state)
 		t1 = perf_counter()
 		if action == 'pass':
+			t4 = (perf_counter(), action)
+			state = deepcopy(parent.state)
 			state.date = self.launches[state.date].next_launch
 			cost = parent.cost
 		elif action == 'launch':
-			state.air = state.air + state.loaded
-			state.loaded = []
+			t4 = (perf_counter(), action)
+			air = parent.state.air[:] + parent.state.loaded[:]
+			loaded = []
 			cost = parent.cost + self.launches[state.date].fixed_cost
-			state.date = self.launches[state.date].next_launch
+			date = self.launches[state.date].next_launch
+			state = State(parent.state.land[:], loaded, air, date)
 		else:
-			state.land.remove(action)
-			state.loaded.append(action)
+			# LOAD Vertice
+			t4 = (perf_counter(), action)
+			land = parent.state.land[:]
+			print(land)
+			print(action)
+			land.remove(action[0])
+			loaded = parent.state.loaded[:]
+			loaded.remove(action[0])
 			cost = parent.cost + (
 				self.launches[state.date].variable_cost *
 				self.vertices[action.name].weight)
+			date = copy(parent.state.date)
+			state = State(land, loaded, parent.state.air[:], parent.state.date)
 
 		t2 = perf_counter()
 		n = Node(state, parent, action, cost)
@@ -160,5 +171,6 @@ class Problem:
 		p_deepcopy = 100*(t1 - start)/(t3 - start)
 		p_actions = 100*(t2 - t1)/(t3 - start)
 		p_node = 100*(t3 - t2)/(t3 - start)
+		p_action = 100*(t4[0] - t1)/(t3 - start)
 
-		return n, p_deepcopy, p_actions, p_node
+		return n, p_deepcopy, p_actions, p_node, p_action
