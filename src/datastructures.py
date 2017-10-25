@@ -135,11 +135,8 @@ class Problem:
 		return actions
 
 	def childnode(self, parent, action):
-		start = perf_counter()
 		pstate = parent.state
-		t1 = perf_counter()
 		if action == 'pass':
-			t4 = (perf_counter(), action)
 			land = set(pstate.land)
 			loaded = set(pstate.loaded)
 			air = set(pstate.air)
@@ -147,14 +144,12 @@ class Problem:
 			state = State(land, loaded, air, date)
 			cost = parent.cost
 		elif action == 'launch':
-			t4 = (perf_counter(), action)
 			air = pstate.air | pstate.loaded
 			cost = parent.cost + self.launches[pstate.date].fixed_cost
 			date = self.launches[pstate.date].next_launch
 			state = State(set(pstate.land), set(), air, date)
 		else:
 			# LOAD Vertice
-			t4 = (perf_counter(), action)
 			land = set(pstate.land)
 			land.remove(action)
 			loaded = set(pstate.loaded)
@@ -164,13 +159,4 @@ class Problem:
 				self.vertices[action.name].weight)
 			state = State(land, loaded, set(pstate.air), pstate.date)
 
-		t2 = perf_counter()
-		n = Node(state, parent, action, cost)
-		t3 = perf_counter()
-
-		p_deepcopy = 100*(t1 - start)/(t3 - start)
-		p_actions = 100*(t2 - t1)/(t3 - start)
-		p_node = 100*(t3 - t2)/(t3 - start)
-		p_action = 100*(t4[0] - t1)/(t3 - start)
-
-		return n, p_deepcopy, p_actions, p_node, p_action
+		return Node(state, parent, action, cost)
