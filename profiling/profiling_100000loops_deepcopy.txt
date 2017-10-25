@@ -1,0 +1,12 @@
+Time to pop =  0.68476856116608
+Time to test goal =  0.055725202891348954
+Time to add explored =  0.04930813896102133
+Time to create child =  37.15903609214635
+Time to check if in explored =  0.13971364705331465
+Time to insert =  0.8823582368620967
+Child already explored =  0
+% time in deepcopy =  97.78844483496849
+% time in actions =  1.4406659773964183
+% time creating Node =  0.7708891876577715
+Time elapsed:  40.13940815385252
+No solution found!

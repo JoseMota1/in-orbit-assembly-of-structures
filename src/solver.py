@@ -1,7 +1,6 @@
 import sys, getopt
 import uninformed_search
 from datastructures import *
-from time import perf_counter
 
 def getinfo(lines):
     """ Retrieves the information present in the file given.
@@ -65,7 +64,7 @@ def main(argv):
     if not solution:
         print("No solution found!")
         sys.exit(0)
-    print(x for x in solution)
+    print(list(x for x in solution))
 
 
 if __name__ == '__main__':

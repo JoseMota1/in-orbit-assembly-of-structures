@@ -1,13 +1,13 @@
 # lista imutavel com acesso hash , lista duplamente ligada e dicionario ordenado
 from collections import namedtuple, deque, OrderedDict
 from itertools import combinations, islice
-from copy import deepcopy
+from copy import deepcopy, copy
 from heapq import heappush, heappop
+from time import perf_counter
 
 Vertice = namedtuple('Vertice', ['name', 'weight'])
 
 class Frontier:
-
 	def __init__(self, node):
 		""" Frontier class is initialized with an initial Node.
 		The expanded dictionary contains the expanded nodes as keys, and
@@ -22,6 +22,7 @@ class Frontier:
 			heappush(self.queue, node)
 			self.expanded[node.state] = [node.cost, False]
 		elif node.cost < self.expanded[node.state][0]:
+			print('Replace')
 			heappush(self.queue, node)
 			self.expanded[node.state][0] = node.cost
 
@@ -41,6 +42,7 @@ class Frontier:
 
 class Launch:
 	__slots__ = ('date', 'max_payload', 'fixed_cost', 'variable_cost', 'next_launch')
+
 	def __init__(self, date, max_payload, fixed_cost, variable_cost, next_launch):
 		self.date = date
 		self.max_payload = max_payload
@@ -58,6 +60,7 @@ class Launch:
 
 class State:
 	__slots__ = ('land', 'loaded', 'air', 'date')
+
 	def __init__(self, land, loaded, air, date):
 		self.land = land
 		self.loaded = loaded
@@ -73,6 +76,7 @@ class State:
 
 class Node:
 	__slots__ = ('state', 'parent', 'action', 'cost')
+
 	def __init__(self, state, parent, action, cost):
 		self.state = state
 		self.parent = parent
@@ -102,9 +106,6 @@ class Problem:
 
 	def goal(self, state):
 		if not state.land and not state.loaded:
-			print('goal')
-			print(state.land)
-			print(state.loaded)
 			return True
 		return False
 
@@ -134,7 +135,9 @@ class Problem:
 		return actions
 
 	def childnode(self, parent, action):
+		start = perf_counter()
 		state = deepcopy(parent.state)
+		t1 = perf_counter()
 		if action == 'pass':
 			state.date = self.launches[state.date].next_launch
 			cost = parent.cost
@@ -150,4 +153,12 @@ class Problem:
 				self.launches[state.date].variable_cost *
 				self.vertices[action.name].weight)
 
-		return Node(state, parent, action, cost)
+		t2 = perf_counter()
+		n = Node(state, parent, action, cost)
+		t3 = perf_counter()
+
+		p_deepcopy = 100*(t1 - start)/(t3 - start)
+		p_actions = 100*(t2 - t1)/(t3 - start)
+		p_node = 100*(t3 - t2)/(t3 - start)
+
+		return n, p_deepcopy, p_actions, p_node
