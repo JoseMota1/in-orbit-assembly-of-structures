@@ -27,7 +27,7 @@ class Frontier:
 			self.expanded[node.state][0] = node.cost
 
 	def pop(self):
-		while True:
+		while self.queue:
 			node = heappop(self.queue)
 			if not self.expanded[node.state][1]:
 				self.expanded[node.state] = [node.cost, True]
@@ -84,10 +84,10 @@ class Node:
 		self.cost = cost
 
 	def __repr__(self):
-		return ('Node state: ' + str(self.state) +
-			' from Parent ' + str(self.parent) +
-			' with action: ' + str(self.action) +
-			' and cost ' + str(self.cost))
+		return ('Node state: ' + str(self.state))# +
+			#' from Parent ' + str(self.parent) +
+			#' with action: ' + str(self.action) +
+			#' and cost ' + str(self.cost))
 
 	def __lt__(self, other):
 		return self.cost < other.cost
@@ -102,7 +102,7 @@ class Problem:
 
 	def initialstate(self):
 		initialdate = next(islice(self.launches, 1))
-		return State(list(self.vertices.values()), [], [], str(initialdate))
+		return State(set(self.vertices.values()), set(), set(), str(initialdate))
 
 	def goal(self, state):
 		if not state.land and not state.loaded:
@@ -124,7 +124,7 @@ class Problem:
 			actions.append('pass')
 		elif ( (len(state.loaded) > 1) or
 				(len(state.loaded) == 1
-					and any(edge in state.air for edge in self.edges[state.loaded[0]])) or
+					and any(edge in state.air for edge in self.edges[next(iter(state.loaded))])) or
 				(len(state.loaded) == 1 and not state.air) ):
 			actions.append('launch')
 		[actions.append(vertice) for vertice in state.land
@@ -136,33 +136,33 @@ class Problem:
 
 	def childnode(self, parent, action):
 		start = perf_counter()
+		pstate = parent.state
 		t1 = perf_counter()
 		if action == 'pass':
 			t4 = (perf_counter(), action)
-			state = deepcopy(parent.state)
-			state.date = self.launches[state.date].next_launch
+			land = set(pstate.land)
+			loaded = set(pstate.loaded)
+			air = set(pstate.air)
+			date = self.launches[pstate.date].next_launch
+			state = State(land, loaded, air, date)
 			cost = parent.cost
 		elif action == 'launch':
 			t4 = (perf_counter(), action)
-			air = parent.state.air[:] + parent.state.loaded[:]
-			loaded = []
-			cost = parent.cost + self.launches[state.date].fixed_cost
-			date = self.launches[state.date].next_launch
-			state = State(parent.state.land[:], loaded, air, date)
+			air = pstate.air | pstate.loaded
+			cost = parent.cost + self.launches[pstate.date].fixed_cost
+			date = self.launches[pstate.date].next_launch
+			state = State(set(pstate.land), set(), air, date)
 		else:
 			# LOAD Vertice
 			t4 = (perf_counter(), action)
-			land = parent.state.land[:]
-			print(land)
-			print(action)
-			land.remove(action[0])
-			loaded = parent.state.loaded[:]
-			loaded.remove(action[0])
+			land = set(pstate.land)
+			land.remove(action)
+			loaded = set(pstate.loaded)
+			loaded.add(action)
 			cost = parent.cost + (
-				self.launches[state.date].variable_cost *
+				self.launches[pstate.date].variable_cost *
 				self.vertices[action.name].weight)
-			date = copy(parent.state.date)
-			state = State(land, loaded, parent.state.air[:], parent.state.date)
+			state = State(land, loaded, set(pstate.air), pstate.date)
 
 		t2 = perf_counter()
 		n = Node(state, parent, action, cost)

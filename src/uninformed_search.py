@@ -47,6 +47,8 @@ def solve(problem):
 		explored.add(node.state)
 		t1 = perf_counter()
 		t_add = t_add + (t1 - t2)
+		#print(node)
+		#print('\n\)')
 
 		#print('Parent ' + str(node.state))
 		for action in problem.actions(node.state):
