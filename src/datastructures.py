@@ -84,10 +84,10 @@ class Node:
 		self.cost = cost
 
 	def __repr__(self):
-		return ('Node with ' + str(self.state))# +
+		return ('Node with ' + str(self.state) +
 			#' from Parent ' + str(self.parent) +
 			#' with action: ' + str(self.action) +
-			#' and cost ' + str(self.cost))
+			' and cost ' + str(self.cost))
 
 	def __lt__(self, other):
 		return self.cost < other.cost
@@ -147,8 +147,8 @@ class Problem:
 		elif action == 'launch':
 			air = pstate.air | pstate.loaded
 			if opts[0] == '-i':
-				cost = parent.cost + self.rem_weight[pstate.land] + self.launches[pstate.date].fixed_cost - len(pstate.land)/((len(pstate.land)*self.launches[pstate.date].fixed_cost + self.launches[pstate.date].max_payload*self.launches[pstate.date].variable_cost))
-			elif opt[0] == '-u':
+				cost = parent.cost + self.rem_weight[pstate.land] + self.launches[pstate.date].fixed_cost
+			elif opts[0] == '-u':
 				cost = parent.cost + self.launches[pstate.date].fixed_cost
 			date = self.launches[pstate.date].next_launch
 			state = State(frozenset(pstate.land), frozenset(), air, date)
@@ -162,7 +162,7 @@ class Problem:
 			if opts[0] == '-i':
 				cost = parent.cost + (
 					self.launches[pstate.date].variable_cost *
-					self.vertices[action.name].weight)
+					self.vertices[action.name].weight) + self.rem_weight[pstate.land]
 			elif opts[0] == '-u':
 				cost = parent.cost + (
 					self.launches[pstate.date].variable_cost *
@@ -177,3 +177,5 @@ class Problem:
 		for i in range(len(vertices)+1):
 			for vertices_comb in combinations(vertices, i):
 				self.rem_weight[frozenset(vertices_comb)] = sum(v.weight for v in vertices_comb)
+
+		print([x for x in self.rem_weight.items()])

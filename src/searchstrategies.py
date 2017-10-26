@@ -36,6 +36,6 @@ def solve(problem, opt):
 			if child.state in explored:
 				continue
 
-			print('child ', child)
+			print('child  ', child)
 			# TODO lower code is done in the Frontier class
 			frontier.insert(child)
