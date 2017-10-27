@@ -20,10 +20,10 @@ def getinfo(lines):
         if line[0][0] == 'V':
             name = line[0]
             value = line[1]
-            vertices[name] = Vertice(name, float(value))
+            vertices[name] = float(value)
         elif line[0] == 'E':
-            v1 = vertices[line[1]]
-            v2 = vertices[line[2]]
+            v1 = line[1]
+            v2 = line[2]
             edges.setdefault(v1, []).append(v2)
             edges.setdefault(v2, []).append(v1)
         elif line[0] == 'L':
@@ -73,8 +73,8 @@ def main(argv):
         if not x == 'pass' and not x == 'launch':
             launch.append(x)
         elif x == 'launch':
-            launchcost = sum(x.weight for x in launch) * launches[date].variable_cost + launches[date].fixed_cost
-            print(launches[date].date, '  ', ' '.join(x.name for x in launch), '  ', launchcost)
+            launchcost = sum(vertices[x] for x in launch) * launches[date].variable_cost + launches[date].fixed_cost
+            print(launches[date].date, '  ', ' '.join(x for x in launch), '  ', launchcost)
             date = launches[date].next_launch
             launch = []
         else: #'pass'

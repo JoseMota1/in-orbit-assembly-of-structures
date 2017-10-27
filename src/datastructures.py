@@ -1,11 +1,9 @@
 # lista imutavel com acesso hash , lista duplamente ligada e dicionario ordenado
-from collections import namedtuple, deque, OrderedDict
+from collections import OrderedDict
 from itertools import combinations, islice
-from copy import deepcopy, copy
+from copy import copy
 from heapq import heappush, heappop
 from time import perf_counter
-
-Vertice = namedtuple('Vertice', ['name', 'weight'])
 
 class Frontier:
 	def __init__(self, node):
@@ -104,7 +102,7 @@ class Problem:
 
 	def initialnode(self):
 		date = next(islice(self.launches, 1))
-		state = State(frozenset(self.vertices.values()), frozenset(), frozenset(), str(date))
+		state = State(frozenset(self.vertices.keys()), frozenset(), frozenset(), str(date))
 		parent = False
 		action = False
 		pathcost = 0
@@ -138,7 +136,7 @@ class Problem:
 				(len(state.loaded) == 1 and not state.air) ):
 			actions.append('launch')
 		[actions.append(vertice) for vertice in state.land
-			if sum(vertice.weight for vertice in state.loaded) + vertice.weight <= max_payload
+			if sum(self.vertices[v] for v in state.loaded) + self.vertices[vertice] <= max_payload
 			if not state.air | state.loaded or
 			not state.loaded and any(edge in state.air for edge in self.edges[vertice]) or
 			any(edge in state.loaded | state.air for edge in self.edges[vertice])]
@@ -177,7 +175,7 @@ class Problem:
 			state = State(land, loaded, frozenset(pstate.air), pstate.date)
 			pathcost = parent.pathcost + (
 					self.launches[pstate.date].variable_cost *
-					self.vertices[action.name].weight )
+					self.vertices[action] )
 			if self.HEURISTIC:
 				cost = pathcost + self.hcost(state, action)
 			else:
@@ -191,8 +189,8 @@ class Problem:
 		vertices = frozenset(self.vertices.values())
 		self.verticesweight = dict()
 		for i in range(len(vertices)+1):
-			for vertices_comb in combinations(vertices, i):
-				self.verticesweight[frozenset(vertices_comb)] = sum(v.weight for v in vertices_comb)
+			for vertices_comb in combinations(vertices.keys(), i):
+				self.verticesweight[frozenset(vertices_comb)] = sum(self.vertices[v] for v in vertices_comb)
 
 		# print([x for x in self.verticesweight.items()])
 
