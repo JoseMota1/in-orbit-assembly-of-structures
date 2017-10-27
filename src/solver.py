@@ -15,18 +15,18 @@ def getinfo(lines):
     launches = dict()
 
     for line in lines:
-        if not line[0]:
+        if not line:
             continue
-        if line[0][0]=='V':
+        if line[0][0] == 'V':
             name = line[0]
             value = line[1]
             vertices[name] = Vertice(name, float(value))
-        elif line[0]=='E':
+        elif line[0] == 'E':
             v1 = vertices[line[1]]
             v2 = vertices[line[2]]
             edges.setdefault(v1, []).append(v2)
             edges.setdefault(v2, []).append(v1)
-        elif line[0]=='L':
+        elif line[0] == 'L':
             launches[line[1]] = Launch(line[1], float(line[2]), float(line[3]),
                 float(line[4]), False)
 
@@ -47,7 +47,7 @@ def main(argv):
         sys.exit(2)
 
     with open(opts[0][1]) as fd:
-        lines = [line.strip().split(' ') for line in fd]
+        lines = [line.strip().split() for line in fd]
 
     vertices, edges, launches = getinfo(lines)
     problem = Problem(vertices, edges, launches)
@@ -56,17 +56,31 @@ def main(argv):
         if opt == '-i':
             problem.heuristics()
             start = perf_counter()
-            solution = searchstrategies.solve(problem, opt)
+            (solution, cost) = searchstrategies.solve(problem)
             print('Time elapsed: ', perf_counter() - start)
         elif opt == '-u':
             start = perf_counter()
-            solution = searchstrategies.solve(problem, opt)
+            (solution, cost) = searchstrategies.solve(problem)
             print('Time elapsed: ', perf_counter() - start)
 
     if not solution:
         print("No solution found!")
         sys.exit(0)
-    print(list(x for x in solution))
+
+    date = next(islice(launches, 1))
+    launch = []
+    for x in solution:
+        if not x == 'pass' and not x == 'launch':
+            launch.append(x)
+        elif x == 'launch':
+            launchcost = sum(x.weight for x in launch) * launches[date].variable_cost + launches[date].fixed_cost
+            print(launches[date].date, '  ', ' '.join(x.name for x in launch), '  ', launchcost)
+            date = launches[date].next_launch
+            launch = []
+        else: #'pass'
+            date = launches[date].next_launch
+
+    print('Cost = ', cost)
 
 
 if __name__ == '__main__':

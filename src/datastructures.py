@@ -20,17 +20,17 @@ class Frontier:
 	def insert(self, node):
 		if not self.expanded.get(node.state, False):
 			heappush(self.queue, node)
-			self.expanded[node.state] = [node.cost, False]
-		elif node.cost < self.expanded[node.state][0]:
+			self.expanded[node.state] = [node.pathcost, False]
+		elif node.pathcost < self.expanded[node.state][0]:
 			print('Replace')
 			heappush(self.queue, node)
-			self.expanded[node.state][0] = node.cost
+			self.expanded[node.state][0] = node.pathcost
 
 	def pop(self):
 		while self.queue:
 			node = heappop(self.queue)
 			if not self.expanded[node.state][1]:
-				self.expanded[node.state] = [node.cost, True]
+				self.expanded[node.state] = [node.pathcost, True]
 				return node
 
 	def isempty(self):
@@ -75,12 +75,13 @@ class State:
 
 
 class Node:
-	__slots__ = ('state', 'parent', 'action', 'cost')
+	__slots__ = ('state', 'parent', 'action', 'pathcost', 'cost')
 
-	def __init__(self, state, parent, action, cost):
+	def __init__(self, state, parent, action, pathcost, cost):
 		self.state = state
 		self.parent = parent
 		self.action = action
+		self.pathcost = pathcost
 		self.cost = cost
 
 	def __repr__(self):
@@ -94,18 +95,28 @@ class Node:
 
 
 class Problem:
+	HEURISTIC = False
 
 	def __init__(self, vertices, edges, launches):
 		self.vertices = vertices
 		self.edges = edges
 		self.launches = launches
 
-	def initialstate(self):
-		initialdate = next(islice(self.launches, 1))
-		return State(frozenset(self.vertices.values()), frozenset(), frozenset(), str(initialdate))
+	def initialnode(self):
+		date = next(islice(self.launches, 1))
+		state = State(frozenset(self.vertices.values()), frozenset(), frozenset(), str(date))
+		parent = False
+		action = False
+		pathcost = 0
+		if self.HEURISTIC:
+			cost = pathcost + self.hcost(state, action)
+		else:
+			cost = pathcost
+
+		return Node(state, parent, action, pathcost, cost)
 
 	def goal(self, state):
-		if not state.land and not state.loaded:
+		if not state.land | state.loaded:
 			return True
 		return False
 
@@ -117,65 +128,78 @@ class Problem:
 		if launch:
 			max_payload = launch.max_payload
 		else:
-			#print('actions@False: ', actions)
 			return actions
 
 		if not state.loaded:
 			actions.append('pass')
 		elif ( (len(state.loaded) > 1) or
 				(len(state.loaded) == 1
-					and any(edge in state.air for edge in self.edges[next(iter(state.loaded))])) or
+					and any(edge in state.air for edge in self.edges[next(iter(state.loaded))]) ) or
 				(len(state.loaded) == 1 and not state.air) ):
 			actions.append('launch')
 		[actions.append(vertice) for vertice in state.land
-			if sum(vertice.weight for vertice in state.loaded) + vertice.weight < max_payload]
-		# if any(self.edges[vertice]) in self.state.air + self.state.loaded or not self.state.air]
+			if sum(vertice.weight for vertice in state.loaded) + vertice.weight <= max_payload
+			if not state.air | state.loaded or
+			not state.loaded and any(edge in state.air for edge in self.edges[vertice]) or
+			any(edge in state.loaded | state.air for edge in self.edges[vertice])]
 
-		#print('max_payload', max_payload, ' actions@True: ', actions)
 		return actions
 
-	def childnode(self, parent, action, *opts):
+	def childnode(self, parent, action):
 		pstate = parent.state
+
 		if action == 'pass':
 			date = self.launches[pstate.date].next_launch
 			state = State(frozenset(pstate.land), frozenset(pstate.loaded), frozenset(pstate.air), date)
-			if opts[0] == '-i':
-				cost = parent.cost + self.rem_weight[pstate.land]
-			elif opt[0] == '-u':
-				cost = parent.cost
+			pathcost = parent.pathcost
+			if self.HEURISTIC:
+				cost = pathcost + self.hcost(state, action)
+			else:
+				cost = pathcost
 
 		elif action == 'launch':
 			air = pstate.air | pstate.loaded
-			if opts[0] == '-i':
-				cost = parent.cost + self.rem_weight[pstate.land] + self.launches[pstate.date].fixed_cost
-			elif opts[0] == '-u':
-				cost = parent.cost + self.launches[pstate.date].fixed_cost
 			date = self.launches[pstate.date].next_launch
 			state = State(frozenset(pstate.land), frozenset(), air, date)
-		else:
-			# LOAD Vertice
+			pathcost = parent.pathcost + self.launches[pstate.date].fixed_cost
+			if self.HEURISTIC:
+				cost = pathcost + self.hcost(state, action)
+			else:
+				cost = pathcost
+
+		else: # action load Vertice
 			land = set(pstate.land)
 			land.remove(action)
 			land = frozenset(land)
 			loaded = set(pstate.loaded)
 			loaded.add(action)
-			if opts[0] == '-i':
-				cost = parent.cost + (
+			loaded = frozenset(loaded)
+			state = State(land, loaded, frozenset(pstate.air), pstate.date)
+			pathcost = parent.pathcost + (
 					self.launches[pstate.date].variable_cost *
-					self.vertices[action.name].weight) + self.rem_weight[pstate.land]
-			elif opts[0] == '-u':
-				cost = parent.cost + (
-					self.launches[pstate.date].variable_cost *
-					self.vertices[action.name].weight)
+					self.vertices[action.name].weight )
+			if self.HEURISTIC:
+				cost = pathcost + self.hcost(state, action)
+			else:
+				cost = pathcost
 
-			state = State(land, frozenset(loaded), frozenset(pstate.air), pstate.date)
-		return Node(state, parent, action, cost)
+		return Node(state, parent, action, pathcost, cost)
 
 	def heuristics(self):
+		self.HEURISTIC = True
+
 		vertices = frozenset(self.vertices.values())
-		self.rem_weight = dict()
+		self.verticesweight = dict()
 		for i in range(len(vertices)+1):
 			for vertices_comb in combinations(vertices, i):
-				self.rem_weight[frozenset(vertices_comb)] = sum(v.weight for v in vertices_comb)
+				self.verticesweight[frozenset(vertices_comb)] = sum(v.weight for v in vertices_comb)
 
-		print([x for x in self.rem_weight.items()])
+		# print([x for x in self.verticesweight.items()])
+
+	def hcost(self, state, action):
+		if action == 'pass':
+			return self.verticesweight[state.land]
+		elif action == 'launch':
+			return self.verticesweight[state.land]
+		else:
+			return self.verticesweight[state.land]
