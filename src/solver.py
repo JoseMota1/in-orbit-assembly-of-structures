@@ -24,8 +24,8 @@ def getinfo(lines):
         elif line[0] == 'E':
             v1 = line[1]
             v2 = line[2]
-            edges.setdefault(v1, []).append(v2)
-            edges.setdefault(v2, []).append(v1)
+            edges.setdefault(v1, set()).add(v2)
+            edges.setdefault(v2, set()).add(v1)
         elif line[0] == 'L':
             launches[line[1]] = Launch(line[1], float(line[2]), float(line[3]),
                 float(line[4]), False)
@@ -70,14 +70,11 @@ def main(argv):
     date = next(islice(launches, 1))
     launch = []
     for x in solution:
-        if not x == 'pass' and not x == 'launch':
-            launch.append(x)
-        elif x == 'launch':
-            launchcost = sum(vertices[x] for x in launch) * launches[date].variable_cost + launches[date].fixed_cost
-            print(launches[date].date, '  ', ' '.join(x for x in launch), '  ', launchcost)
+        if not x == 'pass':
+            launchcost = sum(vertices[v] for v in x) * launches[date].variable_cost + launches[date].fixed_cost
+            print(launches[date].date, '  ', ' '.join(v for v in x), '  ', launchcost)
             date = launches[date].next_launch
-            launch = []
-        else: #'pass'
+        else: # pass
             date = launches[date].next_launch
 
     print('Cost = ', cost)

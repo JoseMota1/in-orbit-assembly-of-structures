@@ -1,0 +1,44 @@
+PS C:\Users\murta\Documents\IST\IASD\in-orbit-assembly-of-structures\src> python .\solver.py -u ..\test\trivial1.txt
+Time elapsed:  0.0004322131489223898
+01012018    V3    47.0
+01022018    V2    34.0
+01032018    V1    86.0
+Cost =  167.0
+PS C:\Users\murta\Documents\IST\IASD\in-orbit-assembly-of-structures\src> python .\solver.py -u ..\test\trivial1.txt
+Time elapsed:  0.0007423996832428018
+01012018    V3    47.0
+01022018    V2    34.0
+01032018    V1    86.0
+Cost =  167.0
+PS C:\Users\murta\Documents\IST\IASD\in-orbit-assembly-of-structures\src> python .\solver.py -u ..\test\trivial2.txt
+Time elapsed:  0.0006527997214721188
+01032018    V1 V2 V3    52.0
+Cost =  52.0
+PS C:\Users\murta\Documents\IST\IASD\in-orbit-assembly-of-structures\src> python .\solver.py -u ..\test\simple1.txt
+Time elapsed:  1.113516751566186
+01012020    V2 V2a V2b    12.0
+02022020    V3    20.0
+03032020    V4b V4 V4a    36.0
+04042020    V5    40.0
+05052020    V1    50.0
+Cost =  158.0
+PS C:\Users\murta\Documents\IST\IASD\in-orbit-assembly-of-structures\src> python .\solver.py -u ..\test\simple1.txt
+Time elapsed:  1.1073962208442791
+01012020    V4b V4 V4a    12.0
+02022020    V3    20.0
+03032020    V2 V2a V2b    36.0
+04042020    V1    40.0
+05052020    V5    50.0
+Cost =  158.0
+PS C:\Users\murta\Documents\IST\IASD\in-orbit-assembly-of-structures\src> python .\solver.py -u ..\test\mir.txt
+Time elapsed:  44.84895110444753
+06062018    VK1    57.24
+01082018    VCM    52.4
+16082018    VDM VS VSTM VK VP VK2 VPM    202.64
+Cost =  312.28
+PS C:\Users\murta\Documents\IST\IASD\in-orbit-assembly-of-structures\src> python .\solver.py -u ..\test\mir.txt
+Time elapsed:  44.21776630708638
+06062018    VK1    57.24
+01082018    VCM    52.4
+16082018    VK2 VP VDM VK VPM VSTM VS    202.64
+Cost =  312.28

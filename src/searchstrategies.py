@@ -26,7 +26,7 @@ def solve(problem):
 			return False
 
 		node = frontier.pop() # Chooses the lowest-cost node in frontier (first)
-		#print('parent ', node)
+		# print('\n', 'parent ', node)
 		if problem.goal(node.state):
 			return solution(node)
 
@@ -37,6 +37,6 @@ def solve(problem):
 			if child.state in explored:
 				continue
 
-			#print('child  ', child)
+			# print('child  ', child)
 			# TODO lower code is done in the Frontier class
 			frontier.insert(child)

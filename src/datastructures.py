@@ -57,17 +57,15 @@ class Launch:
 
 
 class State:
-	__slots__ = ('land', 'loaded', 'air', 'date')
+	__slots__ = ('land', 'air', 'date')
 
-	def __init__(self, land, loaded, air, date):
+	def __init__(self, land, air, date):
 		self.land = land
-		self.loaded = loaded
 		self.air = air
 		self.date = date
 
 	def __repr__(self):
 		return ('State LAND ' + str(self.land) +
-			' LOADED ' + str(self.loaded) +
 			' AIR ' + str(self.air) +
 			' DATE ' + str(self.date))
 
@@ -100,9 +98,11 @@ class Problem:
 		self.edges = edges
 		self.launches = launches
 
+		self.minweights = self.minweight()
+
 	def initialnode(self):
 		date = next(islice(self.launches, 1))
-		state = State(frozenset(self.vertices.keys()), frozenset(), frozenset(), str(date))
+		state = State(frozenset(self.vertices.keys()), frozenset(), str(date))
 		parent = False
 		action = False
 		pathcost = 0
@@ -114,7 +114,7 @@ class Problem:
 		return Node(state, parent, action, pathcost, cost)
 
 	def goal(self, state):
-		if not state.land | state.loaded:
+		if not state.land:
 			return True
 		return False
 
@@ -128,19 +128,20 @@ class Problem:
 		else:
 			return actions
 
-		if not state.loaded:
-			actions.append('pass')
-		elif ( (len(state.loaded) > 1) or
-				(len(state.loaded) == 1
-					and any(edge in state.air for edge in self.edges[next(iter(state.loaded))]) ) or
-				(len(state.loaded) == 1 and not state.air) ):
-			actions.append('launch')
-		[actions.append(vertice) for vertice in state.land
-			if sum(self.vertices[v] for v in state.loaded) + self.vertices[vertice] <= max_payload
-			if not state.air | state.loaded or
-			not state.loaded and any(edge in state.air for edge in self.edges[vertice]) or
-			any(edge in state.loaded | state.air for edge in self.edges[vertice])]
+		actions.append('pass')
 
+		minvw = self.minweights[state.land]
+		maxv = int(max_payload/minvw)
+
+		[actions.append(set(vertices)) for n in range(1, maxv + 1) for vertices in combinations(state.land, n)
+			if sum(self.vertices[v] for v in vertices) <= max_payload
+			if not state.air and len(vertices) == 1
+			or not state.air
+			and all( any(edge in vertices for edge in self.edges[v]) for v in vertices )
+			or all( True if any(edge in state.air for edge in self.edges[v]) else any(edgeofedge in state.air for edge in self.edges[v] for edgeofedge in self.edges[edge] if edge in vertices)
+			for v in vertices) ]
+			#any(edge in state.air for edge in edges[v]) if edges[v] in vertices else edges[v] in state.ai
+		# print(actions)
 		return actions
 
 	def childnode(self, parent, action):
@@ -148,34 +149,23 @@ class Problem:
 
 		if action == 'pass':
 			date = self.launches[pstate.date].next_launch
-			state = State(frozenset(pstate.land), frozenset(pstate.loaded), frozenset(pstate.air), date)
+			state = State(frozenset(pstate.land), frozenset(pstate.air), date)
 			pathcost = parent.pathcost
 			if self.HEURISTIC:
 				cost = pathcost + self.hcost(state, action)
 			else:
 				cost = pathcost
 
-		elif action == 'launch':
-			air = pstate.air | pstate.loaded
+		else: # action Load vertices and Launch
+			land = frozenset(v for v in list(pstate.land) if v not in action)
+			loaded = frozenset(v for v in list(pstate.land) if v in action)
+			air = pstate.air | loaded
 			date = self.launches[pstate.date].next_launch
-			state = State(frozenset(pstate.land), frozenset(), air, date)
-			pathcost = parent.pathcost + self.launches[pstate.date].fixed_cost
-			if self.HEURISTIC:
-				cost = pathcost + self.hcost(state, action)
-			else:
-				cost = pathcost
-
-		else: # action load Vertice
-			land = set(pstate.land)
-			land.remove(action)
-			land = frozenset(land)
-			loaded = set(pstate.loaded)
-			loaded.add(action)
-			loaded = frozenset(loaded)
-			state = State(land, loaded, frozenset(pstate.air), pstate.date)
+			state = State(land, air, date)
 			pathcost = parent.pathcost + (
 					self.launches[pstate.date].variable_cost *
-					self.vertices[action] )
+					sum(self.vertices[v] for v in loaded) +
+					self.launches[pstate.date].fixed_cost)
 			if self.HEURISTIC:
 				cost = pathcost + self.hcost(state, action)
 			else:
@@ -183,21 +173,33 @@ class Problem:
 
 		return Node(state, parent, action, pathcost, cost)
 
+	def sumweight(self):
+		vertices = frozenset(self.vertices.values())
+		verticesweight = dict()
+		for i in range(len(vertices)+1):
+			for vertices_comb in combinations(vertices.keys(), i):
+				verticesweight[frozenset(vertices_comb)] = sum(self.vertices[v] for v in vertices_comb)
+
+		return verticesweight
+
+	def minweight(self):
+		vertices = frozenset(self.vertices)
+		verticesweight = dict()
+		for i in range(len(vertices)+1):
+			for vertices_comb in combinations(vertices, i):
+				verticesweight[frozenset(vertices_comb)] = min((self.vertices[v] for v in vertices_comb), default = 0)
+
+		return verticesweight
+
 	def heuristics(self):
 		self.HEURISTIC = True
 
-		vertices = frozenset(self.vertices.values())
-		self.verticesweight = dict()
-		for i in range(len(vertices)+1):
-			for vertices_comb in combinations(vertices.keys(), i):
-				self.verticesweight[frozenset(vertices_comb)] = sum(self.vertices[v] for v in vertices_comb)
+		self.sumweights = minweight
 
 		# print([x for x in self.verticesweight.items()])
 
 	def hcost(self, state, action):
 		if action == 'pass':
-			return self.verticesweight[state.land]
-		elif action == 'launch':
 			return self.verticesweight[state.land]
 		else:
 			return self.verticesweight[state.land]
