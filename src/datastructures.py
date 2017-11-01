@@ -112,7 +112,7 @@ class Problem:
 		action = False
 		pathcost = 0
 		if self.HEURISTIC:
-			cost = pathcost + self.hcost(state, action)
+			cost = pathcost + self.hcost(state, action, None)
 		else:
 			cost = pathcost
 
@@ -158,7 +158,7 @@ class Problem:
 			state = State(frozenset(pstate.land), frozenset(pstate.air), date)
 			pathcost = parent.pathcost
 			if self.HEURISTIC:
-				cost = pathcost + self.hcost(state, action)
+				cost = pathcost + self.hcost(state, action, None)
 			else:
 				cost = pathcost
 
@@ -173,7 +173,7 @@ class Problem:
 					sum(self.vertices[v] for v in loaded) +
 					self.launches[pstate.date].fixed_cost)
 			if self.HEURISTIC:
-				cost = pathcost + self.hcost(state, action)
+				cost = pathcost + self.hcost(pstate, action , loaded)
 			else:
 				cost = pathcost
 
@@ -198,12 +198,19 @@ class Problem:
 	def heuristics(self):
 		self.HEURISTIC = True
 
-		self.sumweights = sumweight()
+		self.sumweights = self.sumweight()
 
 		# print([x for x in self.verticesweight.items()])
 
-	def hcost(self, state, action):
+	def hcost(self, state, action, loaded):
 		if action == 'pass':
-			return self.verticesweight[state.land]
+			costheuristic = self.sumweights[state.land]/self.sumweights[self.vertices_set]
+			return costheuristic
 		else:
-			return self.verticesweight[state.land]
+			if loaded: 
+				costheuristic = ((self.sumweights[state.land]/self.sumweights[self.vertices_set]))/(
+					self.launches[state.date].variable_cost * sum(self.vertices[v] for v in loaded) +
+					self.launches[state.date].fixed_cost)
+			else:
+				costheuristic = 0
+			return costheuristic
