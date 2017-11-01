@@ -98,6 +98,11 @@ class Problem:
 		self.edges = edges
 		self.launches = launches
 
+		self.branchingfactor = []
+		self.nexpandednodes = 0
+
+		self.vertices_set = frozenset(self.vertices.keys())
+
 		self.minweights = self.minweight()
 
 	def initialnode(self):
@@ -142,6 +147,7 @@ class Problem:
 			for v in vertices) ]
 			#any(edge in state.air for edge in edges[v]) if edges[v] in vertices else edges[v] in state.ai
 		# print(actions)
+		self.branchingfactor.append(len(actions))
 		return actions
 
 	def childnode(self, parent, action):
@@ -174,19 +180,17 @@ class Problem:
 		return Node(state, parent, action, pathcost, cost)
 
 	def sumweight(self):
-		vertices = frozenset(self.vertices.values())
 		verticesweight = dict()
-		for i in range(len(vertices)+1):
-			for vertices_comb in combinations(vertices.keys(), i):
+		for i in range(len(self.vertices_set)+1):
+			for vertices_comb in combinations(self.vertices_set, i):
 				verticesweight[frozenset(vertices_comb)] = sum(self.vertices[v] for v in vertices_comb)
 
 		return verticesweight
 
 	def minweight(self):
-		vertices = frozenset(self.vertices)
 		verticesweight = dict()
-		for i in range(len(vertices)+1):
-			for vertices_comb in combinations(vertices, i):
+		for i in range(len(self.vertices_set)+1):
+			for vertices_comb in combinations(self.vertices_set, i):
 				verticesweight[frozenset(vertices_comb)] = min((self.vertices[v] for v in vertices_comb), default = 0)
 
 		return verticesweight
@@ -194,7 +198,7 @@ class Problem:
 	def heuristics(self):
 		self.HEURISTIC = True
 
-		self.sumweights = minweight
+		self.sumweights = sumweight()
 
 		# print([x for x in self.verticesweight.items()])
 

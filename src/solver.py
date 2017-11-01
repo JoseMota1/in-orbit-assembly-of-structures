@@ -1,6 +1,20 @@
 import sys, getopt
 import searchstrategies
 from datastructures import *
+import scipy.optimize
+from math import pow
+
+def effbranching(N, d, maxb):
+    err = 1
+    step = 1e-4
+    b = 1+step
+    while True:
+        b = b + step
+        if abs(pow(b, d+1) - b*(N+1) + N) < err:
+            return b
+        if b > maxb:
+            print('b >', maxb)
+            return 0
 
 def getinfo(lines):
     """ Retrieves the information present in the file given.
@@ -72,12 +86,22 @@ def main(argv):
     for x in solution:
         if not x == 'pass':
             launchcost = sum(vertices[v] for v in x) * launches[date].variable_cost + launches[date].fixed_cost
-            print(launches[date].date, '  ', ' '.join(v for v in x), '  ', launchcost)
+            print(launches[date].date, ' '.join(v for v in x), launchcost)
             date = launches[date].next_launch
         else: # pass
             date = launches[date].next_launch
 
-    print('Cost = ', cost)
+    print('Cost =', cost)
+
+    print('branching factor =', max(problem.branchingfactor))
+    print('N of expanded nodes =', problem.nexpandednodes)
+
+    N = problem.nexpandednodes
+    d = len(launches)
+
+    b = effbranching(N, d, max(problem.branchingfactor))
+
+    print('Effective branching factor =', b)
 
 
 if __name__ == '__main__':

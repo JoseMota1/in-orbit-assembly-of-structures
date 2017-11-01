@@ -26,6 +26,7 @@ def solve(problem):
 			return False
 
 		node = frontier.pop() # Chooses the lowest-cost node in frontier (first)
+		problem.nexpandednodes += 1
 		# print('\n', 'parent ', node)
 		if problem.goal(node.state):
 			return solution(node)
