@@ -112,7 +112,7 @@ class Problem:
 		action = False
 		pathcost = 0
 		if self.HEURISTIC:
-			cost = pathcost + self.hcost(state, action, None)
+			cost = pathcost + self.hcost(state, action)
 		else:
 			cost = pathcost
 
@@ -158,7 +158,7 @@ class Problem:
 			state = State(frozenset(pstate.land), frozenset(pstate.air), date)
 			pathcost = parent.pathcost
 			if self.HEURISTIC:
-				cost = pathcost + self.hcost(state, action, None)
+				cost = pathcost + self.hcost(state, action)
 			else:
 				cost = pathcost
 
@@ -173,7 +173,7 @@ class Problem:
 					sum(self.vertices[v] for v in loaded) +
 					self.launches[pstate.date].fixed_cost)
 			if self.HEURISTIC:
-				cost = pathcost + self.hcost(pstate, action , loaded)
+				cost = pathcost + self.hcost(pstate, action)
 			else:
 				cost = pathcost
 
@@ -202,20 +202,9 @@ class Problem:
 
 		# print([x for x in self.verticesweight.items()])
 
-	def hcost(self, state, action, loaded):
-		if action == 'pass':
-			costheuristic = self.sumweights[state.land]/self.sumweights[self.vertices_set]
-			return costheuristic
-		else:
-			if loaded: 
-				#costheuristic = ((self.sumweights[state.land]/self.s(umweights[self.vertices_set])*(1-1/(
-				#	self.launches[state.date].variable_cost * sum(self.vertices[v] for v in loaded) +
-				#	self.launches[state.date].fixed_cost)))
-			#	costheuristic = ((self.sumweights[state.land]/self.sumweights[self.vertices_set])*(1-1/(
-			#		self.launches[state.date].variable_cost * self.sumweights[state.land] +
-			#		self.launches[state.date].fixed_cost))) # variable dos que sobram
-				#costheuristic = self.sumweights[state.land]/self.sumweights[self.vertices_set]	
-				#costheuristic = min(self.launches[v].variable_cost for v in self.launches[state.date].next_launch) * self.sumweights[state.land] + min(self.launches[v].fixed_cost for v in self.launches[state.date].next_launch)
-			else:
-				costheuristic = 0
-			return costheuristic
+	def hcost(self, state, action):
+		varmin = min((self.launches[a].variable_cost for a in self.launches.keys() if ((self.launches[a].next_launch) and ((self.launches[a].next_launch) > state.date))), default = 0)
+		fixmin = min((self.launches[a].fixed_cost for a in self.launches.keys() if ((self.launches[a].next_launch) and ((self.launches[a].next_launch) > state.date))), default = 0)
+		maxpay = max((self.launches[a].max_payload for a in self.launches.keys() if ((self.launches[a].next_launch) and ((self.launches[a].next_launch) > state.date))), default = 1)
+		costheuristic = ((fixmin/maxpay) + varmin)*self.sumweights[state.land]
+		return costheuristic
