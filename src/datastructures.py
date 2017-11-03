@@ -249,9 +249,7 @@ class Problem:
 		if weightleft > 0:
 			return float('inf')
 
-		ucost.sort()
-
-		return sum(sorted(fcost)[:min_launches]) + ucost[0] * self.sumweights[state.land]
+		return sum(sorted(fcost)[:min_launches]) + min(ucost) * self.sumweights[state.land]
 		"""
 		varmin = min((self.launches[a].variable_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
 		fixmin = min((self.launches[a].fixed_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
