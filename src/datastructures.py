@@ -202,8 +202,8 @@ class Problem:
 		# print([x for x in self.verticesweight.items()])
 
 	def hcost(self, state, action):
-		varmin = min((self.launches[a].variable_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch => state.date)), default = 0)
-		fixmin = min((self.launches[a].fixed_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch => state.date)), default = 0)
-		maxpay = max((self.launches[a].max_payload for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch => state.date)), default = 1)
-		costheuristic = (varmin)*self.sumweights[state.land]
+		varmin = min((self.launches[a].variable_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
+		fixmin = min((self.launches[a].fixed_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
+		maxpay = max((self.launches[a].max_payload for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 1)
+		costheuristic = ((fixmin/maxpay)+(varmin))*self.sumweights[state.land]
 		return costheuristic
