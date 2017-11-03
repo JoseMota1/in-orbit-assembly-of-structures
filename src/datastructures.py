@@ -5,12 +5,20 @@ from copy import copy
 from heapq import heappush, heappop
 from time import perf_counter
 
+
 class Frontier:
+	""" Frontier class is initialized with an initial Node.
+	It contains a priority queue and a dictionary.
+	The dictionary contains the expanded nodes as keys, and
+	as value the cost of each, and if it has been visited.
+	To not go through the entire queue everytime a node is already
+	expanded it is compared with the expanded dict, and verified if the
+	cost is lower. If so, the cost its updated in the dict, and added to the
+	queue.
+	When a node is removed from the queue, it verifies in the dict
+	if it had been removed before. If so, the value is discarded.
+	"""
 	def __init__(self, node):
-		""" Frontier class is initialized with an initial Node.
-		The expanded dictionary contains the expanded nodes as keys, and
-		the cost of each as value
-		"""
 		self.queue = list()
 		self.expanded = dict()
 		self.insert(node)
@@ -20,7 +28,6 @@ class Frontier:
 			heappush(self.queue, node)
 			self.expanded[node.state] = [node.pathcost, False]
 		elif node.pathcost < self.expanded[node.state][0]:
-			print('Replace')
 			heappush(self.queue, node)
 			self.expanded[node.state][0] = node.pathcost
 
@@ -30,12 +37,6 @@ class Frontier:
 			if not self.expanded[node.state][1]:
 				self.expanded[node.state] = [node.pathcost, True]
 				return node
-
-	def isempty(self):
-		""" TODO SHIT """
-		if not self.queue:
-			return True
-		return False
 
 
 class Launch:
@@ -69,6 +70,17 @@ class State:
 			' AIR ' + str(self.air) +
 			' DATE ' + str(self.date))
 
+	def __eq__(self, other):
+		return self.__slots__ == other.__slots__
+
+	def __hash__(self):
+		prime = 13
+		result = 1
+		result = result*prime + self.land.__hash__()
+		result = result*prime + self.air.__hash__()
+		result = result*prime + int(self.date)
+		return result
+
 
 class Node:
 	__slots__ = ('state', 'parent', 'action', 'pathcost', 'cost')
@@ -98,12 +110,9 @@ class Problem:
 		self.edges = edges
 		self.launches = launches
 
-		self.branchingfactor = []
-		self.nexpandednodes = 0
-
+		# used for the minweight and sumweight functions
 		self.vertices_set = frozenset(self.vertices.keys())
-
-		self.minweights = self.minweight()
+		self.minweights = self.minweight()		# used in the action function
 
 	def initialnode(self):
 		date = next(islice(self.launches, 1))
@@ -112,7 +121,7 @@ class Problem:
 		action = False
 		pathcost = 0
 		if self.HEURISTIC:
-			cost = pathcost + self.hcost(state, action, None)
+			cost = pathcost + self.hcost(state, action)
 		else:
 			cost = pathcost
 
@@ -146,7 +155,6 @@ class Problem:
 			or all( True if any(edge in state.air for edge in self.edges[v]) else any(edgeofedge in state.air for edge in self.edges[v] for edgeofedge in self.edges[edge] if edge in vertices)
 			for v in vertices) ]
 
-		self.branchingfactor.append(len(actions))
 		return actions
 
 	def childnode(self, parent, action):

@@ -1,5 +1,7 @@
 from datastructures import Frontier, Node, State, combinations
 
+nexpanded = 0
+
 def solution(node):
 	# print('Solutions')
 	actions = []
@@ -8,7 +10,8 @@ def solution(node):
 		actions.append(node.action)
 		node = node.parent
 
-	return (reversed(actions[:-1]), pathcost)
+	global nexpanded
+	return (reversed(actions[:-1]), pathcost, nexpanded)
 
 def solve(problem):
 
@@ -20,14 +23,13 @@ def solve(problem):
 	frontier = Frontier(node)
 	explored = set()
 
+	global nexpanded
 	while True:
-		# print(frontier.queue)
 		if not frontier.queue:
 			return False
 
-		node = frontier.pop() # Chooses the lowest-cost node in frontier (first)
-		problem.nexpandednodes += 1
-		# print('\n', 'parent ', node)
+		node = frontier.pop() # Chooses the lowest-cost node in frontier
+		#print('\nparent ', node)
 		if problem.goal(node.state):
 			return solution(node)
 
@@ -38,6 +40,6 @@ def solve(problem):
 			if child.state in explored:
 				continue
 
-			# print('child  ', child)
-			# TODO lower code is done in the Frontier class
+			#print('child  ', child)
 			frontier.insert(child)
+			nexpanded += 1
