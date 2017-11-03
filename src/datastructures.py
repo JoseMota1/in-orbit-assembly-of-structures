@@ -3,7 +3,6 @@ from collections import OrderedDict
 from itertools import combinations, islice
 from copy import copy
 from heapq import heappush, heappop
-from math import ceil
 from time import perf_counter
 
 
@@ -209,54 +208,28 @@ class Problem:
 
 		self.sumweights = self.sumweight()
 
-		# print([x for x in self.verticesweight.items()])
-
 	def hcost(self, state, action):
 		if not state.land:
 			return 0
 		elif not state.date:
 			return float('inf')
 
-		launches = list( (l.date, l.max_payload, l.fixed_cost, l.variable_cost)
+		launches = ((l.max_payload, l.fixed_cost, l.variable_cost)
 			for (key, l) in self.launches.items()
 			if ( l.next_launch and (
 			(l.next_launch[-4:] > state.date[-4:]) or
 			(l.next_launch[-4:] == state.date[-4:] and l.next_launch[-6:-4] > state.date[-6:-4]) or
 			(l.next_launch[-4:] == state.date[-4:] and l.next_launch[-6:-4] == state.date[-6:-4] and l.next_launch[:2] >= state.date[:2]) )
-			or not l.next_launch ) )
+			or not l.next_launch ))
 
-		nvertices = len(state.land)
-		weightleft = self.sumweights[state.land]
-		min_launches = 0
-
-		maxpay = list()
-		fcost = list()
-		ucost = list()
+		mpmax, fcostmin, ucostmin = float('-inf'), float('inf'), float('inf')
 		for l in launches:
-			d, mp, f, v = l
-			maxpay.append(mp)
-			fcost.append(f)
-			ucost.append(v)
+				mp, fcost, ucost = l
+				if mp > mpmax:
+					mpmax = mp
+				if fcost < fcostmin:
+					fcostmin = fcost
+				if ucost < ucostmin:
+					ucostmin = ucost
 
-		for mp in sorted(maxpay, reverse=True):
-			if weightleft > 0:
-				weightleft -= mp
-				min_launches += 1
-			else:
-				min_launches += 1
-				break
-
-		if weightleft > 0:
-			return float('inf')
-
-		ucost.sort()
-
-		return sum(sorted(fcost)[:min_launches]) + ucost[0] * self.sumweights[state.land]
-		"""
-		varmin = min((self.launches[a].variable_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
-		fixmin = min((self.launches[a].fixed_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
-		maxpay = max((self.launches[a].max_payload for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 1)
-		costheuristic = ((fixmin/maxpay)+(varmin))*self.sumweights[pstate.land]
-
-		return costheuristic
-		"""
+		return ((fcostmin/mpmax) + ucostmin) * self.sumweights[state.land]
