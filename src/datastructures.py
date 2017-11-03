@@ -52,7 +52,7 @@ class Launch:
 	def __repr__(self):
 		return ('Launch date: ' + str(self.date) +
 			', max_payload: ' + str(self.max_payload) +
-			', fixed_cost: ' + str(self.fixed_cost) +
+			', f	ixed_cost: ' + str(self.fixed_cost) +
 			', variable_cost: ' + str(self.variable_cost) +
 			', next_launch: ' + str(self.next_launch))
 
@@ -96,7 +96,8 @@ class Node:
 		return ('Node with ' + str(self.state) +
 			#' from Parent ' + str(self.parent) +
 			#' with action: ' + str(self.action) +
-			' and cost ' + str(self.cost))
+			' pathcost ' + str(self.pathcost) +
+			' cost ' + str(self.cost))
 
 	def __lt__(self, other):
 		return self.cost < other.cost
@@ -112,7 +113,8 @@ class Problem:
 
 		# used for the minweight and sumweight functions
 		self.vertices_set = frozenset(self.vertices.keys())
-		self.minweights = self.minweight()		# used in the action function
+		# used in the action function
+		self.minweights = self.minweight()
 
 	def initialnode(self):
 		date = next(islice(self.launches, 1))
@@ -165,11 +167,11 @@ class Problem:
 			state = State(frozenset(pstate.land), frozenset(pstate.air), date)
 			pathcost = parent.pathcost
 			if self.HEURISTIC:
-				cost = pathcost + self.hcost(pstate, action)
+				cost = pathcost + self.hcost(state, action)
 			else:
 				cost = pathcost
 
-		else: # action Load vertices and Launch
+		else: # action Load vertices + Launch
 			land = frozenset(v for v in list(pstate.land) if v not in action)
 			loaded = frozenset(v for v in list(pstate.land) if v in action)
 			air = pstate.air | loaded
@@ -180,7 +182,7 @@ class Problem:
 					sum(self.vertices[v] for v in loaded) +
 					self.launches[pstate.date].fixed_cost)
 			if self.HEURISTIC:
-				cost = pathcost + self.hcost(pstate, action)
+				cost = pathcost + self.hcost(state, action)
 			else:
 				cost = pathcost
 
@@ -207,11 +209,44 @@ class Problem:
 
 		self.sumweights = self.sumweight()
 
-		# print([x for x in self.verticesweight.items()])
-
 	def hcost(self, state, action):
-		varmin = min((self.launches[a].variable_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
-		fixmin = min((self.launches[a].fixed_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
-		maxpay = max((self.launches[a].max_payload for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 1)
-		costheuristic = ((fixmin/maxpay)+(varmin))*self.sumweights[state.land]
-		return costheuristic
+		if not state.land:
+			return 0
+		elif not state.date:
+			return float('inf')
+
+		# gets all the launches that will still happen
+		launches = ( (l.max_payload, l.fixed_cost, l.variable_cost)
+			for (key, l) in self.launches.items()
+			if ( l.next_launch and (
+			(l.next_launch[-4:] > state.date[-4:]) or
+			(l.next_launch[-4:] == state.date[-4:] and l.next_launch[-6:-4] > state.date[-6:-4]) or
+			(l.next_launch[-4:] == state.date[-4:] and l.next_launch[-6:-4] == state.date[-6:-4] and l.next_launch[:2] >= state.date[:2]) )
+			or not l.next_launch ) )
+
+		nvertices = len(state.land)
+		weightleft = self.sumweights[state.land]
+		min_launches = 0
+
+		maxpay = list()
+		fcost = list()
+		ucost = float('inf')
+		for l in launches:
+			mp, f, u = l
+			maxpay.append(mp)
+			fcost.append(f)
+			if u < ucost:
+				ucost = u
+
+		for mp in sorted(maxpay, reverse=True):
+			if weightleft > 0:
+				weightleft -= mp
+				min_launches += 1
+			else:
+				min_launches += 1
+				break
+
+		if weightleft > 0:
+			return float('inf')
+
+		return sum(sorted(fcost)[:min_launches]) + ucost * self.sumweights[state.land]

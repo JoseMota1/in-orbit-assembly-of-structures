@@ -32,12 +32,14 @@ def getinfo(lines):
 
     launches = OrderedDict(sorted(launches.items(),
                         key = lambda t: (t[0][4:]+t[0][2:4]+t[0][0:2]) ))
+
     previous_launch = False
     for (key, value) in reversed(launches.items()):
         value.next_launch = previous_launch
         previous_launch = key
 
     return (vertices, edges, launches)
+
 
 def main(argv):
     try:

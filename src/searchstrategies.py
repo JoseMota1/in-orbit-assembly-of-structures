@@ -1,9 +1,8 @@
-from datastructures import Frontier, Node, State, combinations
+from datastructures import Frontier, Node
 
 nexpanded = 0
 
 def solution(node):
-	# print('Solutions')
 	actions = []
 	pathcost = node.pathcost
 	while node:
@@ -17,9 +16,8 @@ def solve(problem):
 
 	node = problem.initialnode()
 
-	""" Frontier is a priority queue ordered by PATH-COST,
-		with __node__ as the only element.
-	"""
+	# Frontier is a priority queue ordered by PATH-COST,
+	#	with __node__ as the only element.
 	frontier = Frontier(node)
 	explored = set()
 
@@ -29,7 +27,6 @@ def solve(problem):
 			return False
 
 		node = frontier.pop() # Chooses the lowest-cost node in frontier
-		#print('\nparent ', node)
 		if problem.goal(node.state):
 			return solution(node)
 
@@ -40,6 +37,5 @@ def solve(problem):
 			if child.state in explored:
 				continue
 
-			#print('child  ', child)
 			frontier.insert(child)
 			nexpanded += 1
