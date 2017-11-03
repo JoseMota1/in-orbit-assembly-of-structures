@@ -97,7 +97,8 @@ class Node:
 		return ('Node with ' + str(self.state) +
 			#' from Parent ' + str(self.parent) +
 			#' with action: ' + str(self.action) +
-			' and cost ' + str(self.cost))
+			' pathcost ' + str(self.pathcost) +
+			' cost ' + str(self.cost))
 
 	def __lt__(self, other):
 		return self.cost < other.cost
@@ -211,15 +212,18 @@ class Problem:
 		# print([x for x in self.verticesweight.items()])
 
 	def hcost(self, state, action):
-		if not state.date and not state.land:
+		if not state.land:
 			return 0
 		elif not state.date:
 			return float('inf')
 
-		launches = ( (l.date, l.max_payload, l.fixed_cost, l.variable_cost)
+		launches = list( (l.date, l.max_payload, l.fixed_cost, l.variable_cost)
 			for (key, l) in self.launches.items()
-			if l.next_launch and (l.next_launch >= state.date)
-			or not l.next_launch )
+			if ( l.next_launch and (
+			(l.next_launch[-4:] > state.date[-4:]) or
+			(l.next_launch[-4:] == state.date[-4:] and l.next_launch[-6:-4] > state.date[-6:-4]) or
+			(l.next_launch[-4:] == state.date[-4:] and l.next_launch[-6:-4] == state.date[-6:-4] and l.next_launch[:2] >= state.date[:2]) )
+			or not l.next_launch ) )
 
 		nvertices = len(state.land)
 		weightleft = self.sumweights[state.land]
@@ -232,7 +236,7 @@ class Problem:
 			d, mp, f, v = l
 			maxpay.append(mp)
 			fcost.append(f)
-			ucost.append((d, v))
+			ucost.append(v)
 
 		for mp in sorted(maxpay, reverse=True):
 			if weightleft > 0:
@@ -245,26 +249,9 @@ class Problem:
 		if weightleft > 0:
 			return float('inf')
 
-		ucost.sort(key = lambda x: x[1])
-		idx = 0
-		full = [False] * len(ucost)
-		wloaded = [0] * len(ucost)
-		sumucost = 0
-		w = 0
-		for v in sorted(state.land, key = lambda x: self.vertices[x], reverse=True):
-			w = self.vertices[v]
-			if not full[idx] and self.launches[ucost[idx][0]].max_payload > (wloaded[idx] + w):
-				wloaded[idx] += w
-			else:
-				if self.launches[ucost[idx][0]].max_payload == (wloaded[idx] + w):
-					full[idx] = True
-				while not full[idx] and self.launches[ucost[idx][0]].max_payload > (wloaded[idx] + w):
-				idx += 1
-				wloaded[idx] = w
+		ucost.sort()
 
-		sumucost = sum(ucost[i][1] * wloaded[i] for i in range(len(ucost)))
-
-		return sum(sorted(fcost)[:min_launches]) + sumucost
+		return sum(sorted(fcost)[:min_launches]) + ucost[0] * self.sumweights[state.land]
 		"""
 		varmin = min((self.launches[a].variable_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
 		fixmin = min((self.launches[a].fixed_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
