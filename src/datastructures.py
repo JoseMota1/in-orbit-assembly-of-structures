@@ -52,7 +52,7 @@ class Launch:
 	def __repr__(self):
 		return ('Launch date: ' + str(self.date) +
 			', max_payload: ' + str(self.max_payload) +
-			', fixed_cost: ' + str(self.fixed_cost) +
+			', f	ixed_cost: ' + str(self.fixed_cost) +
 			', variable_cost: ' + str(self.variable_cost) +
 			', next_launch: ' + str(self.next_launch))
 
@@ -209,9 +209,25 @@ class Problem:
 
 		# print([x for x in self.verticesweight.items()])
 
-	def hcost(self, state, action):
+	def hcost(self, pstate, action):
+		launches = ( (l.max_payload, l.fixed_cost, l.variable_cost)
+			for (key, l) in self.launches.items()
+			if l.next_launch and (l.next_launch >= pstate.date) )
+
+		maxpay, fixmin, varmin = float('-inf'), float('inf'), float('inf')
+		for l in launches:
+			mp, f, v = l
+			if mp > maxpay:
+				maxpay = mp
+			if f < fixmin:
+				fixmin = f
+			if v < varmin:
+				varmin = v
+
+		"""
 		varmin = min((self.launches[a].variable_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
 		fixmin = min((self.launches[a].fixed_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
 		maxpay = max((self.launches[a].max_payload for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 1)
-		costheuristic = ((fixmin/maxpay)+(varmin))*self.sumweights[state.land]
+		"""
+		costheuristic = ((fixmin/maxpay)+(varmin))*self.sumweights[pstate.land]
 		return costheuristic
