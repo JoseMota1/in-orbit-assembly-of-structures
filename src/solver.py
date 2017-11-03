@@ -1,7 +1,6 @@
 import sys, getopt
 import searchstrategies
 from datastructures import *
-import scipy.optimize
 from math import pow
 
 def effbranching(N, d, maxb):
