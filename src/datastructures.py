@@ -3,6 +3,7 @@ from collections import OrderedDict
 from itertools import combinations, islice
 from copy import copy
 from heapq import heappush, heappop
+from math import ceil
 from time import perf_counter
 
 
@@ -165,7 +166,7 @@ class Problem:
 			state = State(frozenset(pstate.land), frozenset(pstate.air), date)
 			pathcost = parent.pathcost
 			if self.HEURISTIC:
-				cost = pathcost + self.hcost(pstate, action)
+				cost = pathcost + self.hcost(state, action)
 			else:
 				cost = pathcost
 
@@ -180,7 +181,7 @@ class Problem:
 					sum(self.vertices[v] for v in loaded) +
 					self.launches[pstate.date].fixed_cost)
 			if self.HEURISTIC:
-				cost = pathcost + self.hcost(pstate, action)
+				cost = pathcost + self.hcost(state, action)
 			else:
 				cost = pathcost
 
@@ -209,25 +210,66 @@ class Problem:
 
 		# print([x for x in self.verticesweight.items()])
 
-	def hcost(self, pstate, action):
-		launches = ( (l.max_payload, l.fixed_cost, l.variable_cost)
+	def hcost(self, state, action):
+		if not state.date and not state.land:
+			return 0
+		elif not state.date:
+			return float('inf')
+
+		launches = ( (l.date, l.max_payload, l.fixed_cost, l.variable_cost)
 			for (key, l) in self.launches.items()
-			if l.next_launch and (l.next_launch >= pstate.date) )
+			if l.next_launch and (l.next_launch >= state.date)
+			or not l.next_launch )
 
-		maxpay, fixmin, varmin = float('-inf'), float('inf'), float('inf')
+		nvertices = len(state.land)
+		weightleft = self.sumweights[state.land]
+		min_launches = 0
+
+		maxpay = list()
+		fcost = list()
+		ucost = list()
 		for l in launches:
-			mp, f, v = l
-			if mp > maxpay:
-				maxpay = mp
-			if f < fixmin:
-				fixmin = f
-			if v < varmin:
-				varmin = v
+			d, mp, f, v = l
+			maxpay.append(mp)
+			fcost.append(f)
+			ucost.append((d, v))
 
+		for mp in sorted(maxpay, reverse=True):
+			if weightleft > 0:
+				weightleft -= mp
+				min_launches += 1
+			else:
+				min_launches += 1
+				break
+
+		if weightleft > 0:
+			return float('inf')
+
+		ucost.sort(key = lambda x: x[1])
+		idx = 0
+		full = [False] * len(ucost)
+		wloaded = [0] * len(ucost)
+		sumucost = 0
+		w = 0
+		for v in sorted(state.land, key = lambda x: self.vertices[x], reverse=True):
+			w = self.vertices[v]
+			if not full[idx] and self.launches[ucost[idx][0]].max_payload > (wloaded[idx] + w):
+				wloaded[idx] += w
+			else:
+				if self.launches[ucost[idx][0]].max_payload == (wloaded[idx] + w):
+					full[idx] = True
+				while not full[idx] and self.launches[ucost[idx][0]].max_payload > (wloaded[idx] + w):
+				idx += 1
+				wloaded[idx] = w
+
+		sumucost = sum(ucost[i][1] * wloaded[i] for i in range(len(ucost)))
+
+		return sum(sorted(fcost)[:min_launches]) + sumucost
 		"""
 		varmin = min((self.launches[a].variable_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
 		fixmin = min((self.launches[a].fixed_cost for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 0)
 		maxpay = max((self.launches[a].max_payload for a in self.launches.keys() if self.launches[a].next_launch and (self.launches[a].next_launch >= state.date)), default = 1)
-		"""
 		costheuristic = ((fixmin/maxpay)+(varmin))*self.sumweights[pstate.land]
+
 		return costheuristic
+		"""
